@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CheckpointCard } from '@/components/trips/CheckpointCard';
+import { MapView } from '@/components/maps/MapView';
 import { useTripStore } from '@/hooks/useTripStore';
 import { tripModeLabels, tripPurposeLabels } from '@/types/trip';
 import { Button } from '@/components/ui/button';
@@ -9,10 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, MapPin, Clock, Route, Edit2, Trash2, 
   Car, Bus, Train, Bike, PersonStanding, Plane, Navigation,
-  Share2, FileText
+  Share2, FileText, Sparkles, Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 const modeIcons = {
   car: Car,
@@ -37,8 +37,12 @@ export default function TripDetails() {
   if (!trip) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Trip not found</p>
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
+            <MapPin className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground font-medium">Trip not found</p>
+          <Button onClick={() => navigate('/history')}>Back to History</Button>
         </div>
       </AppLayout>
     );
@@ -51,6 +55,13 @@ export default function TripDetails() {
     navigate('/history');
   };
 
+  // Generate route for map
+  const routePath = [
+    { lat: 8.5241, lng: 76.9366 },
+    { lat: 8.5341, lng: 76.9466 },
+    { lat: 8.5441, lng: 76.9566 }
+  ];
+
   return (
     <AppLayout>
       <div className="p-4 space-y-4">
@@ -59,84 +70,103 @@ export default function TripDetails() {
           <Button 
             variant="ghost" 
             size="icon"
+            className="rounded-xl"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-bold flex-1">Trip Details</h1>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="rounded-xl">
             <Share2 className="h-5 w-5" />
           </Button>
         </div>
 
+        {/* Map */}
+        <MapView 
+          height="200px"
+          routePath={routePath}
+          markers={[
+            { lat: 8.5241, lng: 76.9366, type: 'origin' },
+            { lat: 8.5441, lng: 76.9566, type: 'destination' }
+          ]}
+          className="shadow-lg"
+        />
+
         {/* Route Card */}
-        <Card className="overflow-hidden">
-          <div className="bg-primary p-4 text-primary-foreground">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-foreground/20">
-                <ModeIcon className="h-6 w-6" />
+        <Card className="overflow-hidden border-0">
+          <div className="gradient-primary p-5 text-primary-foreground">
+            <div className="flex items-center gap-4 mb-5">
+              <div className="h-14 w-14 rounded-2xl bg-primary-foreground/20 flex items-center justify-center shadow-lg">
+                <ModeIcon className="h-7 w-7" />
               </div>
               <div>
-                <p className="font-semibold">{tripModeLabels[trip.mode]}</p>
-                <p className="text-sm opacity-90">{tripPurposeLabels[trip.purpose]}</p>
+                <p className="font-bold text-lg">{tripModeLabels[trip.mode]}</p>
+                <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 text-xs">
+                  {tripPurposeLabels[trip.purpose]}
+                </Badge>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
+            <div className="space-y-4">
+              <div className="flex items-start gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="h-3 w-3 rounded-full bg-success border-2 border-primary-foreground" />
-                  <div className="w-0.5 h-8 bg-primary-foreground/50" />
+                  <div className="h-4 w-4 rounded-full bg-success border-2 border-primary-foreground shadow" />
+                  <div className="w-0.5 h-10 bg-primary-foreground/40" />
                 </div>
                 <div>
-                  <p className="text-xs opacity-75">From</p>
-                  <p className="font-medium">{trip.origin}</p>
+                  <p className="text-xs opacity-75 font-medium">FROM</p>
+                  <p className="font-bold text-lg">{trip.origin}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="h-3 w-3 rounded-full bg-secondary border-2 border-primary-foreground" />
+              <div className="flex items-start gap-4">
+                <div className="h-4 w-4 rounded-full bg-secondary border-2 border-primary-foreground shadow" />
                 <div>
-                  <p className="text-xs opacity-75">To</p>
-                  <p className="font-medium">{trip.destination}</p>
+                  <p className="text-xs opacity-75 font-medium">TO</p>
+                  <p className="font-bold text-lg">{trip.destination}</p>
                 </div>
               </div>
             </div>
           </div>
           
-          <CardContent className="p-4">
+          <CardContent className="p-5">
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
+              <div className="p-3 rounded-xl bg-primary/10">
+                <Zap className="h-5 w-5 text-primary mx-auto mb-1" />
                 <p className="text-2xl font-bold text-primary">
                   {trip.distance?.toFixed(1) || '—'}
                 </p>
-                <p className="text-xs text-muted-foreground">km</p>
+                <p className="text-xs text-muted-foreground font-medium">kilometers</p>
               </div>
-              <div>
+              <div className="p-3 rounded-xl bg-secondary/10">
+                <Clock className="h-5 w-5 text-secondary mx-auto mb-1" />
                 <p className="text-2xl font-bold text-secondary">
                   {trip.duration || '—'}
                 </p>
-                <p className="text-xs text-muted-foreground">minutes</p>
+                <p className="text-xs text-muted-foreground font-medium">minutes</p>
               </div>
-              <div>
+              <div className="p-3 rounded-xl bg-accent/20">
+                <Sparkles className="h-5 w-5 text-accent-foreground mx-auto mb-1" />
                 <p className="text-2xl font-bold text-accent-foreground">
                   {trip.checkpoints.length}
                 </p>
-                <p className="text-xs text-muted-foreground">stops</p>
+                <p className="text-xs text-muted-foreground font-medium">moments</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Time Info */}
-        <Card>
+        <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Date & Time</span>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-info" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Date & Time</span>
               </div>
               <div className="text-right">
-                <p className="font-medium">{format(trip.startTime, 'MMM d, yyyy')}</p>
+                <p className="font-bold">{format(trip.startTime, 'MMM d, yyyy')}</p>
                 <p className="text-sm text-muted-foreground">
                   {format(trip.startTime, 'h:mm a')} - {trip.endTime ? format(trip.endTime, 'h:mm a') : 'Ongoing'}
                 </p>
@@ -147,11 +177,11 @@ export default function TripDetails() {
 
         {/* Checkpoints */}
         {trip.checkpoints.length > 0 && (
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Checkpoints
+                <Sparkles className="h-4 w-4 text-accent" />
+                Moments Captured
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
@@ -166,31 +196,31 @@ export default function TripDetails() {
 
         {/* Notes */}
         {trip.notes && (
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Notes
+                <FileText className="h-4 w-4 text-info" />
+                Trip Notes
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <p className="text-sm text-muted-foreground">{trip.notes}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{trip.notes}</p>
             </CardContent>
           </Card>
         )}
 
         {/* Actions */}
         <div className="flex gap-3 pb-4">
-          <Button variant="outline" className="flex-1 gap-2">
+          <Button variant="outline" className="flex-1 gap-2 h-12 rounded-xl font-semibold">
             <Edit2 className="h-4 w-4" />
-            Edit
+            Edit Trip
           </Button>
           <Button 
             variant="outline" 
-            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            className="h-12 rounded-xl text-destructive hover:bg-destructive hover:text-destructive-foreground"
             onClick={handleDelete}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           </Button>
         </div>
       </div>

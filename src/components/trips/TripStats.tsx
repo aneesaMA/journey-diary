@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Clock, Route, TrendingUp } from 'lucide-react';
+import { Route, Clock, MapPin, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TripStatsProps {
@@ -9,63 +9,40 @@ interface TripStatsProps {
 }
 
 const stats = [
-  { 
-    key: 'trips', 
-    label: 'Total Trips', 
-    icon: MapPin, 
-    color: 'bg-primary/10 text-primary',
-    format: (v: number) => v.toString()
-  },
-  { 
-    key: 'distance', 
-    label: 'Distance', 
-    icon: Route, 
-    color: 'bg-secondary/10 text-secondary',
-    format: (v: number) => `${v.toFixed(1)} km`
-  },
-  { 
-    key: 'duration', 
-    label: 'Time', 
-    icon: Clock, 
-    color: 'bg-success/10 text-success',
-    format: (v: number) => `${Math.floor(v / 60)}h ${v % 60}m`
-  },
-  { 
-    key: 'avg', 
-    label: 'Avg/Trip', 
-    icon: TrendingUp, 
-    color: 'bg-accent/80 text-accent-foreground',
-    format: (v: number, t: number) => t > 0 ? `${(v / t).toFixed(1)} km` : '0 km'
-  }
+  { key: 'trips', icon: MapPin, label: 'Trips', gradient: 'from-primary to-primary/70' },
+  { key: 'distance', icon: Route, label: 'Distance', gradient: 'from-secondary to-secondary/70' },
+  { key: 'duration', icon: Clock, label: 'Hours', gradient: 'from-success to-success/70' },
+  { key: 'streak', icon: Flame, label: 'Streak', gradient: 'from-accent to-accent/70' }
 ];
 
 export function TripStats({ totalTrips, totalDistance, totalDuration }: TripStatsProps) {
-  const values: Record<string, number> = {
+  const values = {
     trips: totalTrips,
-    distance: totalDistance,
-    duration: totalDuration,
-    avg: totalDistance
+    distance: `${totalDistance.toFixed(0)}km`,
+    duration: `${Math.round(totalDuration / 60)}h`,
+    streak: '7 days'
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {stats.map(({ key, label, icon: Icon, color, format }) => (
-        <Card key={key} className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-xl",
-                color
-              )}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-lg font-bold">
-                  {key === 'avg' ? format(values[key], totalTrips) : format(values[key], totalTrips)}
-                </p>
-                <p className="text-xs text-muted-foreground">{label}</p>
-              </div>
+    <div className="grid grid-cols-4 gap-2">
+      {stats.map(({ key, icon: Icon, label, gradient }) => (
+        <Card 
+          key={key} 
+          className="border-0 shadow-sm overflow-hidden bg-card hover:shadow-md transition-shadow"
+        >
+          <CardContent className="p-3 text-center">
+            <div className={cn(
+              "mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-sm",
+              gradient
+            )}>
+              <Icon className="h-5 w-5 text-primary-foreground" />
             </div>
+            <p className="text-lg font-bold text-foreground">
+              {values[key as keyof typeof values]}
+            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+              {label}
+            </p>
           </CardContent>
         </Card>
       ))}

@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { ModeSelector } from '@/components/trips/ModeSelector';
 import { PurposeSelector } from '@/components/trips/PurposeSelector';
 import { CheckpointCard } from '@/components/trips/CheckpointCard';
+import { MapView } from '@/components/maps/MapView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +14,7 @@ import { useTripStore } from '@/hooks/useTripStore';
 import { TripMode, TripPurpose, Checkpoint } from '@/types/trip';
 import { 
   MapPin, Navigation, Clock, Plus, Camera, 
-  StopCircle, CheckCircle2, Route 
+  StopCircle, CheckCircle2, Route, Sparkles, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +34,6 @@ export default function TrackTrip() {
   const [checkpointName, setCheckpointName] = useState('');
   const [checkpointNote, setCheckpointNote] = useState('');
 
-  // Simulated GPS coordinates
   const [currentLocation] = useState({ lat: 8.5241, lng: 76.9366 });
 
   useEffect(() => {
@@ -54,9 +54,7 @@ export default function TrackTrip() {
   };
 
   const handleStartTracking = () => {
-    if (!origin) {
-      return;
-    }
+    if (!origin) return;
     startTrip(origin);
     setIsTracking(true);
   };
@@ -68,7 +66,7 @@ export default function TrackTrip() {
       purpose,
       notes,
       checkpoints,
-      distance: Math.random() * 20 + 5 // Simulated distance
+      distance: Math.random() * 20 + 5
     });
     setIsTracking(false);
     navigate('/');
@@ -93,89 +91,125 @@ export default function TrackTrip() {
     setShowAddCheckpoint(false);
   };
 
+  // Generate route path for visualization
+  const routePath = [
+    currentLocation,
+    { lat: currentLocation.lat + 0.01, lng: currentLocation.lng + 0.01 },
+    { lat: currentLocation.lat + 0.02, lng: currentLocation.lng + 0.015 }
+  ];
+
   return (
     <AppLayout>
       <div className="p-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">
-            {isTracking ? 'Trip in Progress' : 'Start New Trip'}
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold">
+              {isTracking ? 'Trip in Progress' : 'New Adventure'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isTracking ? 'Recording your journey...' : 'Where are you heading?'}
+            </p>
+          </div>
           {isTracking && (
-            <div className="flex items-center gap-2 text-primary">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 text-success">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success"></span>
               </span>
-              <span className="text-sm font-medium">Recording</span>
+              <span className="text-xs font-semibold">Live</span>
             </div>
           )}
         </div>
 
+        {/* Live Map */}
+        {isTracking && (
+          <MapView 
+            center={currentLocation}
+            height="200px"
+            showCurrentLocation
+            routePath={routePath}
+            markers={checkpoints.map(cp => ({
+              lat: cp.latitude,
+              lng: cp.longitude,
+              type: 'checkpoint' as const
+            }))}
+            className="shadow-lg"
+          />
+        )}
+
         {/* Timer Card */}
         {isTracking && (
-          <Card className="bg-primary text-primary-foreground border-none">
-            <CardContent className="p-6">
+          <Card className="border-0 overflow-hidden">
+            <div className="gradient-primary p-6 text-primary-foreground">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <Clock className="h-5 w-5" />
-                  <span className="text-sm font-medium opacity-90">Duration</span>
+                  <Zap className="h-5 w-5" />
+                  <span className="text-sm font-semibold opacity-90">Trip Duration</span>
                 </div>
-                <p className="text-4xl font-mono font-bold">{formatTime(elapsedTime)}</p>
+                <p className="text-5xl font-mono font-bold tracking-wider">{formatTime(elapsedTime)}</p>
               </div>
-              <div className="mt-4 flex items-center justify-center gap-6">
+              <div className="mt-6 flex items-center justify-center gap-8">
                 <div className="text-center">
-                  <p className="text-2xl font-bold">{(elapsedTime / 60 * 0.5).toFixed(1)}</p>
-                  <p className="text-xs opacity-90">km traveled</p>
+                  <p className="text-3xl font-bold">{(elapsedTime / 60 * 0.5).toFixed(1)}</p>
+                  <p className="text-xs opacity-80 font-medium">km traveled</p>
                 </div>
-                <div className="h-8 w-px bg-primary-foreground/30" />
+                <div className="h-10 w-px bg-primary-foreground/30" />
                 <div className="text-center">
-                  <p className="text-2xl font-bold">{checkpoints.length}</p>
-                  <p className="text-xs opacity-90">checkpoints</p>
+                  <p className="text-3xl font-bold">{checkpoints.length}</p>
+                  <p className="text-xs opacity-80 font-medium">checkpoints</p>
                 </div>
               </div>
-            </CardContent>
+            </div>
           </Card>
         )}
 
         {/* Location Inputs */}
-        <Card>
+        <Card className="border-0 shadow-sm">
           <CardContent className="p-4 space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-success" />
-                Origin
+              <label className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-success flex items-center justify-center">
+                  <MapPin className="h-2.5 w-2.5 text-success-foreground" />
+                </div>
+                Starting Point
               </label>
               <Input
-                placeholder="Enter starting point..."
+                placeholder="Where are you starting from?"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
                 disabled={isTracking}
+                className="border-2 focus:border-success rounded-xl"
               />
             </div>
             
             <div className="flex justify-center">
-              <div className="flex flex-col items-center">
-                <Route className="h-5 w-5 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-1">
+                <div className="h-6 w-0.5 bg-gradient-to-b from-success to-secondary rounded-full" />
+                <Route className="h-4 w-4 text-muted-foreground" />
+                <div className="h-6 w-0.5 bg-gradient-to-b from-secondary to-secondary rounded-full" />
               </div>
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-secondary" />
+              <label className="text-sm font-semibold flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-secondary flex items-center justify-center">
+                  <MapPin className="h-2.5 w-2.5 text-secondary-foreground" />
+                </div>
                 Destination
               </label>
               <Input
-                placeholder="Enter destination..."
+                placeholder="Where are you heading?"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
+                className="border-2 focus:border-secondary rounded-xl"
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Mode & Purpose */}
-        <Card>
+        <Card className="border-0 shadow-sm">
           <CardContent className="p-4 space-y-4">
             <ModeSelector selected={mode} onSelect={setMode} />
             <PurposeSelector selected={purpose} onSelect={setPurpose} />
@@ -184,39 +218,44 @@ export default function TrackTrip() {
 
         {/* Checkpoints */}
         {isTracking && (
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Checkpoints</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  Moments
+                </CardTitle>
                 <Sheet open={showAddCheckpoint} onOpenChange={setShowAddCheckpoint}>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Plus className="h-4 w-4 mr-1" />
+                    <Button variant="outline" size="sm" className="rounded-xl gap-1">
+                      <Plus className="h-4 w-4" />
                       Add
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="h-auto">
+                  <SheetContent side="bottom" className="h-auto rounded-t-3xl">
                     <SheetHeader>
-                      <SheetTitle>Add Checkpoint</SheetTitle>
+                      <SheetTitle className="text-left">Capture a Moment ✨</SheetTitle>
                     </SheetHeader>
                     <div className="space-y-4 mt-4">
                       <Input
-                        placeholder="Checkpoint name..."
+                        placeholder="Name this stop..."
                         value={checkpointName}
                         onChange={(e) => setCheckpointName(e.target.value)}
+                        className="rounded-xl border-2"
                       />
                       <Textarea
-                        placeholder="Add a note (optional)..."
+                        placeholder="Add a memory note (optional)..."
                         value={checkpointNote}
                         onChange={(e) => setCheckpointNote(e.target.value)}
+                        className="rounded-xl border-2"
                       />
                       <div className="flex gap-2">
-                        <Button variant="outline" className="flex-1 gap-2">
-                          <Camera className="h-4 w-4" />
-                          Photo
+                        <Button variant="outline" className="flex-1 gap-2 rounded-xl h-12">
+                          <Camera className="h-5 w-5 text-primary" />
+                          Add Photo
                         </Button>
-                        <Button className="flex-1" onClick={handleAddCheckpoint}>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                        <Button className="flex-1 rounded-xl h-12 gradient-primary" onClick={handleAddCheckpoint}>
+                          <CheckCircle2 className="h-5 w-5 mr-2" />
                           Save
                         </Button>
                       </div>
@@ -233,23 +272,29 @@ export default function TrackTrip() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No checkpoints yet. Add stops along your journey!
-                </p>
+                <div className="text-center py-8">
+                  <div className="h-16 w-16 mx-auto mb-3 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Camera className="h-8 w-8 text-accent" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    No moments yet. Capture stops along your journey!
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
         )}
 
         {/* Notes */}
-        <Card>
+        <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <label className="text-sm font-medium mb-2 block">Trip Notes</label>
+            <label className="text-sm font-semibold mb-2 block">Trip Notes</label>
             <Textarea
-              placeholder="Add notes about your trip..."
+              placeholder="What makes this trip special?"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
+              className="rounded-xl border-2"
             />
           </CardContent>
         </Card>
@@ -258,19 +303,19 @@ export default function TrackTrip() {
         <div className="pb-4">
           {isTracking ? (
             <Button 
-              className="w-full h-14 text-lg gap-2 bg-secondary hover:bg-secondary/90"
+              className="w-full h-14 text-lg gap-2 gradient-secondary shadow-glow-secondary rounded-2xl font-semibold"
               onClick={handleStopTracking}
             >
-              <StopCircle className="h-5 w-5" />
+              <StopCircle className="h-6 w-6" />
               End Trip
             </Button>
           ) : (
             <Button 
-              className="w-full h-14 text-lg gap-2"
+              className="w-full h-14 text-lg gap-2 gradient-primary shadow-glow-primary rounded-2xl font-semibold"
               onClick={handleStartTracking}
               disabled={!origin}
             >
-              <Navigation className="h-5 w-5" />
+              <Navigation className="h-6 w-6" />
               Start Tracking
             </Button>
           )}
